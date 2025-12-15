@@ -73,7 +73,10 @@ salt = st.selectbox("High salt intake", ["No", "Yes"])
 
 bmi = st.number_input("BMI", 10.0, 60.0, 25.0)
 waist = st.number_input("Waist circumference (cm)", 50, 150, 90)
-obesity = st.selectbox("Obesity", ["No", "Yes"])
+
+# автоматически определяем ожирение
+obesity = "Yes" if bmi >= 30 else "No"
+
 
 # -------------------------
 # Prediction
