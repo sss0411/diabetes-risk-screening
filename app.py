@@ -3,14 +3,20 @@ import pandas as pd
 import numpy as np
 import joblib
 
-st.set_page_config(page_title="Diabetes Risk Screening Tool", layout="centered")
+# --------------------------------------------------
+# Page config
+# --------------------------------------------------
+st.set_page_config(
+    page_title="Diabetes Risk Screening Tool",
+    layout="centered"
+)
 
 st.title("🩺 Diabetes Risk Screening Tool")
 st.caption("Machine learning–based screening tool (not a diagnostic system)")
 
-# -------------------------
+# --------------------------------------------------
 # Load models and artifacts
-# -------------------------
+# --------------------------------------------------
 @st.cache_resource
 def load_artifacts():
     model = joblib.load("diabetes_model.joblib")
@@ -26,9 +32,9 @@ except Exception as e:
     st.exception(e)
     st.stop()
 
-# -------------------------
-# Model selection
-# -------------------------
+# --------------------------------------------------
+# 1. Screening strategy
+# --------------------------------------------------
 st.subheader("1️⃣ Screening strategy")
 model_type = st.radio(
     "Select screening mode:",
@@ -45,9 +51,9 @@ else:
     clf = model_bal
     default_threshold = 0.3
 
-# -------------------------
-# Threshold
-# -------------------------
+# --------------------------------------------------
+# 2. Probability threshold
+# --------------------------------------------------
 st.subheader("2️⃣ Probability threshold")
 threshold = st.slider(
     "Decision threshold",
@@ -57,9 +63,9 @@ threshold = st.slider(
     step=0.05
 )
 
-# -------------------------
-# Inputs
-# -------------------------
+# --------------------------------------------------
+# 3. Patient information
+# --------------------------------------------------
 st.subheader("3️⃣ Patient information")
 
 sex = st.selectbox("Sex", ["Male", "Female"])
@@ -71,16 +77,22 @@ alcohol = st.selectbox("Alcohol drinking", ["No", "Yes"])
 physical = st.selectbox("Physical inactivity", ["No", "Yes"])
 salt = st.selectbox("High salt intake", ["No", "Yes"])
 
-bmi = st.number_input("BMI", 10.0, 60.0, 25.0)
-waist = st.number_input("Waist circumference (cm)", 50, 150, 90)
+bmi = st.number_input("BMI", min_value=10.0, max_value=60.0, value=25.0)
+waist = st.number_input(
+    "Waist circumference (cm)",
+    min_value=50,
+    max_value=150,
+    value=90
+)
 
-# автоматически определяем ожирение
+# --------------------------------------------------
+# Automatically determine obesity (IMPORTANT FIX)
+# --------------------------------------------------
 obesity = "Yes" if bmi >= 30 else "No"
 
-
-# -------------------------
+# --------------------------------------------------
 # Prediction
-# -------------------------
+# --------------------------------------------------
 if st.button("🔍 Estimate diabetes risk"):
     input_df = pd.DataFrame([{
         "Sex": sex,
@@ -96,27 +108,32 @@ if st.button("🔍 Estimate diabetes risk"):
         "Obesity": obesity
     }])
 
+    # One-hot encoding + align with training features
     input_df = pd.get_dummies(input_df)
     input_df = input_df.reindex(columns=features, fill_value=0)
-st.subheader("DEBUG: model input check")
-st.write("Non-zero input features:")
-st.write(input_df.loc[:, input_df.sum() != 0])
 
+    # Scaling
     input_scaled = scaler.transform(input_df)
+
+    # Prediction
     risk = clf.predict_proba(input_scaled)[0][1]
 
     st.metric("Estimated diabetes risk", f"{risk:.1%}")
 
     if risk >= threshold:
-        st.warning("⚠️ High diabetes risk detected. Further clinical evaluation is recommended.")
+        st.warning(
+            "⚠️ High diabetes risk detected. "
+            "Further clinical evaluation is recommended."
+        )
     else:
         st.success("✅ Low diabetes risk.")
 
-# -------------------------
+# --------------------------------------------------
 # Disclaimer
-# -------------------------
+# --------------------------------------------------
 st.info(
     "This tool is intended for research and screening purposes only. "
     "It does not replace professional medical diagnosis."
 )
+
 
