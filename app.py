@@ -95,6 +95,9 @@ if st.button("🔍 Estimate diabetes risk"):
 
     input_df = pd.get_dummies(input_df)
     input_df = input_df.reindex(columns=features, fill_value=0)
+st.subheader("DEBUG: model input check")
+st.write("Non-zero input features:")
+st.write(input_df.loc[:, input_df.sum() != 0])
 
     input_scaled = scaler.transform(input_df)
     risk = clf.predict_proba(input_scaled)[0][1]
