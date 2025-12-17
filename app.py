@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import joblib
 
 # -----------------------------------------------------
@@ -23,55 +22,29 @@ def load_artifacts():
 model, scaler = load_artifacts()
 
 # -----------------------------------------------------
-# Title
+# Title & description (USER-FRIENDLY)
 # -----------------------------------------------------
 st.title("🩺 Diabetes Risk Screening Tool")
 
 st.write(
     """
-    This application estimates the risk of diabetes based on
-    demographic, lifestyle, and anthropometric factors.
+    This tool estimates the risk of diabetes based on common
+    health and lifestyle factors.
 
-    ⚠️ This tool is for **screening purposes only** and does not provide a diagnosis.
+    ⚠️ The result is for **screening purposes only** and does not
+    provide a medical diagnosis.
     """
 )
 
 # -----------------------------------------------------
-# 1. Screening mode
+# Fixed screening settings (NOT visible to user)
 # -----------------------------------------------------
-st.header("1. Select screening mode")
-
-mode = st.radio(
-    "Screening mode:",
-    [
-        "Moderate sensitivity (clinical pre-screening)",
-        "High sensitivity (population screening)"
-    ]
-)
-
-# Default thresholds
-if mode == "Moderate sensitivity (clinical pre-screening)":
-    default_threshold = 0.50
-else:
-    default_threshold = 0.30
+THRESHOLD = 0.30  # High sensitivity screening
 
 # -----------------------------------------------------
-# 2. Probability threshold
+# Patient information
 # -----------------------------------------------------
-st.header("2. Probability threshold")
-
-threshold = st.slider(
-    "Decision threshold",
-    min_value=0.10,
-    max_value=0.90,
-    value=default_threshold,
-    step=0.01
-)
-
-# -----------------------------------------------------
-# 3. Patient information
-# -----------------------------------------------------
-st.header("3. Patient information")
+st.header("Patient information")
 
 age = st.number_input(
     "Age (years)",
@@ -107,7 +80,7 @@ waist = st.number_input(
 obesity = st.selectbox("Obesity", ["No", "Yes"])
 
 # -----------------------------------------------------
-# Encode categorical variables (MUST MATCH TRAINING)
+# Encoding (MUST match training)
 # -----------------------------------------------------
 sex_val = 1 if sex == "Male" else 0
 smoking_val = 1 if smoking == "Yes" else 0
@@ -144,12 +117,11 @@ input_data = pd.DataFrame({
 if st.button("Predict risk"):
     X_scaled = scaler.transform(input_data)
     probability = model.predict_proba(X_scaled)[0, 1]
-    prediction = int(probability >= threshold)
+    prediction = int(probability >= THRESHOLD)
 
     st.subheader("Result")
 
-    st.write(f"**Predicted probability of diabetes:** {probability:.2f}")
-    st.write(f"**Decision threshold:** {threshold:.2f}")
+    st.write(f"**Estimated probability of diabetes:** {probability:.2f}")
 
     if prediction == 1:
         st.error("⚠️ High risk of diabetes (screen-positive)")
@@ -157,6 +129,7 @@ if st.button("Predict risk"):
         st.success("✅ Low risk of diabetes (screen-negative)")
 
     st.info(
-        "This result represents a screening assessment only. "
-        "Clinical evaluation and laboratory tests are required for diagnosis."
+        "This screening tool prioritizes sensitivity to avoid missing individuals "
+        "at high risk. Clinical evaluation and laboratory tests are required "
+        "for diagnosis."
     )
